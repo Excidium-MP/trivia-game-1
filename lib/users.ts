@@ -13,5 +13,5 @@ export interface Account {
  */
 export const ACCOUNTS: Account[] = [
   { username: "Zarin", password: "Zarin", isAdmin: true },
-  { username: "Irene", password: "Irene", isAdmin: false },
+  { username: "Irene", password: "Irene123!", isAdmin: true },
 ];

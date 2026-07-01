@@ -51,9 +51,9 @@ const CHECKOUT_UX_QUESTIONS: Question[] = [
   {
     prompt:
       "What percentage of users abandon checkout because the process feels too long or complicated?",
-    choices: ["8%", "15%", "26%", "50%"],
+    choices: ["8%", "15%", "18%", "50%"],
     correctIndex: 2,
-    funFact: "One of Baymard's most cited checkout findings.",
+    funFact: "One of Baymard's most cited checkout findings (per the current Checkout UX guide).",
   },
   {
     prompt: "Which checkout feature is frequently recommended to improve conversion?",

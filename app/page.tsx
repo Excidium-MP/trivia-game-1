@@ -5,10 +5,11 @@ import { useAuth } from "@/lib/auth";
 import { QUIZZES } from "@/lib/questions";
 import { LoginScreen } from "@/components/LoginScreen";
 import { HomeScreen } from "@/components/HomeScreen";
+import { StoryScreen } from "@/components/StoryScreen";
 import { SetupScreen } from "@/components/SetupScreen";
 import { QuizRunner } from "@/components/QuizRunner";
 
-type Screen = "home" | "setup" | "running";
+type Screen = "home" | "story" | "setup" | "running";
 
 export default function App() {
   const { session, ready, login, logout } = useAuth();
@@ -41,7 +42,17 @@ export default function App() {
         </button>
       </header>
 
-      {screen === "home" && <HomeScreen session={session} onStart={() => setScreen("setup")} />}
+      {screen === "home" && (
+        <HomeScreen
+          session={session}
+          onStart={() => setScreen("setup")}
+          onViewStory={() => setScreen("story")}
+        />
+      )}
+
+      {screen === "story" && (
+        <StoryScreen onBack={() => setScreen("home")} onStartTrivia={() => setScreen("setup")} />
+      )}
 
       {screen === "setup" && (
         <SetupScreen
