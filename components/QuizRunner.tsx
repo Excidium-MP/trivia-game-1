@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { Question, Quiz } from "@/lib/questions";
-import { CHOICE_STYLES, LETTERS } from "@/lib/ui";
+import { CHOICE_STYLES } from "@/lib/ui";
+import { HoverButton } from "@/components/AriesUI";
 
 type Phase = "playing" | "results" | "tiebreak" | "champion";
 
@@ -91,7 +92,6 @@ export function QuizRunner({
       setPhase("champion");
       return;
     }
-    // narrow to those who were correct if it splits the group; otherwise keep all
     const nextTied = correct.length > 1 && correct.length < tied.length ? correct : tied;
     const next = pickTbQuestion(tbUsed);
     setTied(nextTied);
@@ -101,207 +101,563 @@ export function QuizRunner({
     setTbMarked([]);
   }
 
-  // ---------------- RESULTS ----------------
-  if (phase === "results") {
+  // ---------------- RESULTS / CHAMPION ----------------
+  if (phase === "results" || phase === "champion") {
     const max = Math.max(...players.map((p) => scores[p]));
     const winners = players.filter((p) => scores[p] === max);
-    const draw = winners.length > 1;
-    return (
-      <Screen>
-        <h1 className="text-4xl font-extrabold">Results</h1>
-        <Scoreboard ranked={ranked} scores={scores} highlight={draw ? winners : winners} />
-        {draw ? (
-          <>
-            <p className="text-center text-xl font-bold text-amber-300">
-              🤝 It&apos;s a draw between {joinNames(winners)}!
-            </p>
-            <button onClick={() => startTiebreak(winners)} className={primaryBtn}>
-              Start sudden-death tiebreaker
-            </button>
-          </>
-        ) : (
-          <p className="text-center text-2xl font-extrabold text-emerald-300">
-            🏆 {winners[0]} wins!
-          </p>
-        )}
-        <button onClick={onExit} className={ghostBtn}>
-          Back to home
-        </button>
-      </Screen>
-    );
-  }
+    const isChampion = phase === "champion";
+    const draw = !isChampion && winners.length > 1;
+    const highlight = isChampion ? (champion ? [champion] : []) : winners;
 
-  // ---------------- CHAMPION (post-tiebreak) ----------------
-  if (phase === "champion") {
     return (
-      <Screen>
-        <p className="text-6xl">🏆</p>
-        <h1 className="text-center text-3xl font-extrabold text-emerald-300">
-          {champion} wins the tiebreaker!
-        </h1>
-        <Scoreboard ranked={ranked} scores={scores} highlight={champion ? [champion] : []} />
-        <button onClick={onExit} className={primaryBtn}>
-          Back to home
-        </button>
-      </Screen>
+      <EndScreen
+        label={isChampion ? "Champion" : "Results"}
+        showTrophy={isChampion || !draw}
+        heading={isChampion ? "We have a champion!" : "Results"}
+        winnerLine={
+          isChampion
+            ? `🏆 ${champion} wins the tiebreaker!`
+            : draw
+              ? `🤝 It's a draw between ${joinNames(winners)}!`
+              : `🏆 ${winners[0]} wins!`
+        }
+        winnerLineColor={draw ? "#B5730B" : "#12967A"}
+        ranked={ranked}
+        scores={scores}
+        highlight={highlight}
+        showTiebreakBtn={draw}
+        onStartTiebreak={() => startTiebreak(winners)}
+        onExit={onExit}
+        exitStyle={
+          isChampion
+            ? { color: "#fff", background: "#BF1B76", border: "none" }
+            : draw
+              ? { color: "#fff", background: "#1F2D6B", border: "none" }
+              : { color: "#6B6480", background: "#fff", border: "1.5px solid #E4DFEC" }
+        }
+      />
     );
   }
 
   // ---------------- TIEBREAK ----------------
   if (phase === "tiebreak") {
-    const question = quiz.questions[tbQ];
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-5 px-4 pb-6 pt-16">
-        <div className="text-center">
-          <span className="rounded-full bg-amber-500/20 px-4 py-1 text-sm font-bold text-amber-300">
-            Sudden-death tiebreaker
-          </span>
-          <p className="mt-2 text-slate-300">Between {joinNames(tied)}</p>
-        </div>
-        <QuestionCard question={question} revealed={tbRevealed} />
-        {!tbRevealed ? (
-          <button onClick={() => setTbRevealed(true)} className={primaryBtn}>
-            Reveal answer
-          </button>
-        ) : (
-          <>
-            <MarkPanel players={tied} marked={tbMarked} onToggle={(n) => toggle(setTbMarked, n)} />
-            <button onClick={resolveTiebreak} className={emeraldBtn}>
-              Submit round
-            </button>
-          </>
-        )}
-      </main>
+      <QuestionView
+        question={quiz.questions[tbQ]}
+        revealed={tbRevealed}
+        marked={tbMarked}
+        markPlayers={tied}
+        onToggleMark={(n) => toggle(setTbMarked, n)}
+        onReveal={() => setTbRevealed(true)}
+        onAdvance={resolveTiebreak}
+        onQuit={onExit}
+        advanceLabel="Submit round"
+        tiebreak={{ tiedNames: joinNames(tied) }}
+      />
     );
   }
 
   // ---------------- PLAYING ----------------
-  const question = quiz.questions[qIndex];
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-5 px-4 pb-6 pt-16">
-      <div className="flex items-center justify-between text-sm font-semibold text-slate-300">
-        <span className="rounded-full bg-white/10 px-3 py-1">
-          Question {qIndex + 1} of {total}
-        </span>
-        <button onClick={onExit} className="text-slate-400 hover:text-slate-200">
-          Quit
-        </button>
-      </div>
-
-      <QuestionCard question={question} revealed={revealed} />
-
-      {!revealed ? (
-        <button onClick={() => setRevealed(true)} className={primaryBtn}>
-          Reveal answer
-        </button>
-      ) : (
-        <>
-          <MarkPanel players={players} marked={marked} onToggle={(n) => toggle(setMarked, n)} />
-          <button onClick={nextQuestion} className={emeraldBtn}>
-            {qIndex + 1 < total ? "Next question" : "See results"}
-          </button>
-        </>
-      )}
-    </main>
+    <QuestionView
+      question={quiz.questions[qIndex]}
+      revealed={revealed}
+      marked={marked}
+      markPlayers={players}
+      onToggleMark={(n) => toggle(setMarked, n)}
+      onReveal={() => setRevealed(true)}
+      onAdvance={nextQuestion}
+      onQuit={onExit}
+      advanceLabel={qIndex + 1 < total ? "Next question" : "See results"}
+      progress={{ qIndex, total }}
+    />
   );
 }
 
-// ---------------- shared pieces ----------------
+// ============================================================
+// Question / Reveal view (shared by playing + tiebreak)
+// ============================================================
 
-function QuestionCard({ question, revealed }: { question: Question; revealed: boolean }) {
+function QuestionView({
+  question,
+  revealed,
+  marked,
+  markPlayers,
+  onToggleMark,
+  onReveal,
+  onAdvance,
+  onQuit,
+  advanceLabel,
+  progress,
+  tiebreak,
+}: {
+  question: Question;
+  revealed: boolean;
+  marked: string[];
+  markPlayers: string[];
+  onToggleMark: (name: string) => void;
+  onReveal: () => void;
+  onAdvance: () => void;
+  onQuit: () => void;
+  advanceLabel: string;
+  progress?: { qIndex: number; total: number };
+  tiebreak?: { tiedNames: string };
+}) {
+  const isMain = !!progress;
+
   return (
-    <>
-      <h2 className="text-center text-2xl font-bold sm:text-3xl">{question.prompt}</h2>
-      <div className="grid grid-cols-1 gap-3">
-        {question.choices.map((c, i) => {
-          const isCorrect = i === question.correctIndex;
-          const cls = revealed
-            ? isCorrect
-              ? "bg-green-600"
-              : "bg-white/10 opacity-50"
-            : CHOICE_STYLES[i].bg;
+    <main
+      style={{
+        position: "relative",
+        zIndex: 5,
+        maxWidth: 660,
+        margin: "0 auto",
+        minHeight: "calc(100vh - 78px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
+        padding: "4px 22px 40px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {tiebreak ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#FBEFE0",
+              color: "#B5730B",
+              fontSize: 13.5,
+              fontWeight: 700,
+              padding: "8px 15px",
+              borderRadius: 999,
+            }}
+          >
+            ⚡ Sudden-death tiebreaker
+          </span>
+        ) : (
+          <span
+            style={{
+              background: "#fff",
+              color: "#1F2D6B",
+              fontSize: 13.5,
+              fontWeight: 700,
+              padding: "8px 15px",
+              borderRadius: 999,
+              boxShadow: "0 4px 14px -8px rgba(31,45,107,0.4)",
+            }}
+          >
+            Question {progress!.qIndex + 1} of {progress!.total}
+          </span>
+        )}
+        <HoverButton
+          onClick={onQuit}
+          base={{
+            cursor: "pointer",
+            fontFamily: "inherit",
+            background: "none",
+            border: "none",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#9B93A8",
+          }}
+          hover={{ color: "#C81E5A" }}
+        >
+          Quit
+        </HoverButton>
+      </div>
+
+      {tiebreak && (
+        <p style={{ margin: "-4px 0 0", textAlign: "center", color: "#6B6480", fontSize: 14, fontWeight: 500 }}>
+          Between {tiebreak.tiedNames}
+        </p>
+      )}
+
+      {isMain && (
+        <div style={{ display: "flex", gap: 6 }}>
+          {Array.from({ length: progress!.total }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                flex: 1,
+                height: 5,
+                borderRadius: 3,
+                background:
+                  i < progress!.qIndex ? "#12967A" : i === progress!.qIndex ? "#BF1B76" : "#E2DCEB",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <h2
+        style={{
+          margin: "6px 0 2px",
+          textAlign: "center",
+          fontSize: 27,
+          lineHeight: 1.28,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          color: "#1F2D6B",
+        }}
+      >
+        {question.prompt}
+      </h2>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+        {question.choices.map((text, i) => {
+          const correct = i === question.correctIndex;
+          const p = CHOICE_STYLES[i];
+          let bg: string, color: string, chipBg: string, chipColor: string, shadow: string, shape: string, showCheck: boolean;
+          if (!revealed) {
+            bg = p.bg;
+            color = "#fff";
+            chipBg = "rgba(255,255,255,0.22)";
+            chipColor = "#fff";
+            shadow = `0 10px 24px -16px ${p.bg}`;
+            shape = p.shape;
+            showCheck = false;
+          } else if (correct) {
+            bg = "#12967A";
+            color = "#fff";
+            chipBg = "rgba(255,255,255,0.25)";
+            chipColor = "#fff";
+            shadow = "0 12px 26px -14px rgba(18,150,122,0.8)";
+            shape = "✓";
+            showCheck = true;
+          } else {
+            bg = "#F2EFF5";
+            color = "#B4AEC0";
+            chipBg = "#E7E2EE";
+            chipColor = "#B4AEC0";
+            shadow = "none";
+            shape = p.shape;
+            showCheck = false;
+          }
           return (
             <div
               key={i}
-              className={`flex items-center gap-3 rounded-2xl px-5 py-5 text-lg font-bold ${cls}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 15,
+                borderRadius: 17,
+                padding: "17px 20px",
+                fontSize: 16.5,
+                fontWeight: 600,
+                transition: "all .2s",
+                background: bg,
+                color,
+                boxShadow: shadow,
+              }}
             >
-              <span className="text-2xl">{CHOICE_STYLES[i].shape}</span>
-              <span className="flex-1">
-                {LETTERS[i]}. {c}
+              <span
+                style={{
+                  flexShrink: 0,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
+                  background: chipBg,
+                  color: chipColor,
+                }}
+              >
+                {shape}
               </span>
-              {revealed && isCorrect && <span className="text-2xl">✓</span>}
+              <span style={{ flex: 1 }}>{text}</span>
+              {showCheck && <span style={{ flexShrink: 0, fontSize: 20, fontWeight: 700 }}>✓</span>}
             </div>
           );
         })}
       </div>
+
       {revealed && (
-        <div className="rounded-xl bg-indigo-500/20 px-5 py-3 text-center text-sm text-slate-200">
-          💡 {question.funFact}
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-start",
+            background: "#F3E8F0",
+            border: "1px solid #EAD3E1",
+            borderRadius: 15,
+            padding: "15px 18px",
+            color: "#7A2657",
+            fontSize: 14,
+            fontWeight: 500,
+            lineHeight: 1.5,
+          }}
+        >
+          <span style={{ flexShrink: 0, fontSize: 17 }}>💡</span>
+          <span>{question.funFact}</span>
         </div>
       )}
-    </>
-  );
-}
 
-function MarkPanel({
-  players,
-  marked,
-  onToggle,
-}: {
-  players: string[];
-  marked: string[];
-  onToggle: (name: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl bg-white/5 p-4">
-      <p className="mb-3 text-center font-semibold text-slate-200">Who got it right?</p>
-      <div className="flex flex-wrap justify-center gap-2">
-        {players.map((p) => {
-          const on = marked.includes(p);
-          return (
-            <button
-              key={p}
-              onClick={() => onToggle(p)}
-              className={`rounded-full px-4 py-2 font-bold transition ${
-                on ? "bg-emerald-500 text-white" : "bg-white/10 text-slate-200 hover:bg-white/20"
-              }`}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 2 }}>
+        {!revealed ? (
+          <HoverButton
+            onClick={onReveal}
+            base={{
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 17,
+              fontWeight: 600,
+              color: "#fff",
+              background: "#BF1B76",
+              border: "none",
+              borderRadius: 15,
+              padding: 17,
+              boxShadow: "0 14px 30px -14px rgba(191,27,118,0.8)",
+            }}
+            hover={{ background: "#A5165F" }}
+          >
+            Reveal answer
+          </HoverButton>
+        ) : (
+          <>
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #EEE9F3",
+                borderRadius: 18,
+                padding: 18,
+                boxShadow: "0 10px 30px -20px rgba(31,45,107,0.5)",
+              }}
             >
-              {on ? "✓ " : ""}
-              {p}
-            </button>
-          );
-        })}
+              <p style={{ margin: "0 0 13px", textAlign: "center", fontSize: 14.5, fontWeight: 600, color: "#1F2D6B" }}>
+                Who got it right?
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 9 }}>
+                {markPlayers.map((name) => {
+                  const on = marked.includes(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => onToggleMark(name)}
+                      style={{
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        fontSize: 14.5,
+                        fontWeight: 600,
+                        borderRadius: 999,
+                        padding: "10px 17px",
+                        transition: "all .15s",
+                        background: on ? "#12967A" : "#fff",
+                        color: on ? "#fff" : "#1F2D6B",
+                        border: `1.5px solid ${on ? "#12967A" : "#E4DFEC"}`,
+                      }}
+                    >
+                      {on ? "✓ " : ""}
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <HoverButton
+              onClick={onAdvance}
+              base={{
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontSize: 17,
+                fontWeight: 600,
+                color: "#fff",
+                background: "#12967A",
+                border: "none",
+                borderRadius: 15,
+                padding: 17,
+                boxShadow: "0 14px 30px -14px rgba(18,150,122,0.8)",
+              }}
+              hover={{ background: "#0E7D66" }}
+            >
+              {advanceLabel}
+            </HoverButton>
+          </>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
 
-function Scoreboard({
+// ============================================================
+// Results / Champion scoreboard
+// ============================================================
+
+function EndScreen({
+  label,
+  showTrophy,
+  heading,
+  winnerLine,
+  winnerLineColor,
   ranked,
   scores,
   highlight,
+  showTiebreakBtn,
+  onStartTiebreak,
+  onExit,
+  exitStyle,
 }: {
+  label: string;
+  showTrophy: boolean;
+  heading: string;
+  winnerLine: string;
+  winnerLineColor: string;
   ranked: string[];
   scores: Record<string, number>;
   highlight: string[];
+  showTiebreakBtn: boolean;
+  onStartTiebreak: () => void;
+  onExit: () => void;
+  exitStyle: CSSProperties;
 }) {
   return (
-    <ol className="mx-auto flex w-full max-w-sm flex-col gap-2">
-      {ranked.map((name, i) => (
-        <li
-          key={name}
-          className={`flex items-center justify-between rounded-xl px-4 py-3 text-lg font-semibold ${
-            highlight.includes(name) ? "bg-emerald-500" : "bg-white/10"
-          }`}
+    <main
+      data-screen-label={label}
+      style={{
+        position: "relative",
+        zIndex: 5,
+        maxWidth: 460,
+        margin: "0 auto",
+        minHeight: "calc(100vh - 78px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 22,
+        padding: "8px 28px 50px",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+          animation: "ariesPop .5s ease both",
+        }}
+      >
+        {showTrophy && (
+          <div
+            style={{
+              width: 88,
+              height: 88,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg,#BF1B76,#29348F)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 42,
+              boxShadow: "0 18px 40px -14px rgba(191,27,118,0.7)",
+            }}
+          >
+            🏆
+          </div>
+        )}
+        <h1 style={{ margin: 0, fontSize: 34, fontWeight: 700, letterSpacing: "-0.02em", color: "#1F2D6B" }}>
+          {heading}
+        </h1>
+        <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: winnerLineColor }}>{winnerLine}</p>
+      </div>
+
+      <ol
+        style={{
+          listStyle: "none",
+          margin: 0,
+          padding: 0,
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 9,
+        }}
+      >
+        {ranked.map((name, i) => {
+          const hot = highlight.includes(name);
+          return (
+            <li
+              key={name}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                justifyContent: "space-between",
+                borderRadius: 14,
+                padding: "14px 18px",
+                fontSize: 16,
+                fontWeight: 600,
+                background: hot ? "#12967A" : "#fff",
+                color: hot ? "#fff" : "#1F2D6B",
+                border: `1px solid ${hot ? "#12967A" : "#EEE9F3"}`,
+              }}
+            >
+              <span
+                style={{
+                  width: 22,
+                  textAlign: "center",
+                  fontWeight: 700,
+                  color: hot ? "rgba(255,255,255,0.75)" : "#B4AEC0",
+                }}
+              >
+                {i + 1}
+              </span>
+              <span
+                style={{
+                  flex: 1,
+                  textAlign: "left",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {name}
+              </span>
+              <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{scores[name]}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+        {showTiebreakBtn && (
+          <HoverButton
+            onClick={onStartTiebreak}
+            base={{
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 16.5,
+              fontWeight: 600,
+              color: "#fff",
+              background: "#BF1B76",
+              border: "none",
+              borderRadius: 15,
+              padding: 16,
+              boxShadow: "0 14px 30px -14px rgba(191,27,118,0.8)",
+            }}
+            hover={{ background: "#A5165F" }}
+          >
+            Start sudden-death tiebreaker
+          </HoverButton>
+        )}
+        <HoverButton
+          onClick={onExit}
+          base={{
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 16,
+            fontWeight: 600,
+            borderRadius: 15,
+            padding: 15,
+            ...exitStyle,
+          }}
+          hover={{ opacity: 0.85 }}
         >
-          <span className="flex items-center gap-3">
-            <span className="w-6 text-center text-slate-300">{i + 1}</span>
-            <span className="truncate">{name}</span>
-          </span>
-          <span className="tabular-nums">{scores[name]}</span>
-        </li>
-      ))}
-    </ol>
+          Back to home
+        </HoverButton>
+      </div>
+    </main>
   );
 }
 
@@ -309,17 +665,3 @@ function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   return names.slice(0, -1).join(", ") + " & " + names[names.length - 1];
 }
-
-function Screen({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 px-6 py-10">
-      {children}
-    </main>
-  );
-}
-
-const primaryBtn =
-  "w-full rounded-2xl bg-indigo-500 px-6 py-4 text-lg font-bold transition hover:bg-indigo-400";
-const emeraldBtn =
-  "w-full rounded-2xl bg-emerald-500 px-6 py-4 text-lg font-bold transition hover:bg-emerald-400";
-const ghostBtn = "text-sm font-semibold text-slate-400 hover:text-slate-200";

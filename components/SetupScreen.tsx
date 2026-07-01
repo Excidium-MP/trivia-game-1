@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { QUIZZES } from "@/lib/questions";
+import { FocusInput, HoverButton } from "@/components/AriesUI";
 
 export function SetupScreen({
   onStart,
@@ -28,55 +29,158 @@ export function SetupScreen({
   const canStart = cleaned.length >= 2 && !hasDupes;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-6 py-10">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Who's playing?</h1>
-        <p className="mt-1 text-slate-300">{quiz.title}</p>
+    <main
+      style={{
+        position: "relative",
+        zIndex: 5,
+        maxWidth: 480,
+        margin: "0 auto",
+        minHeight: "calc(100vh - 78px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
+        padding: "8px 28px 40px",
+      }}
+    >
+      <div style={{ textAlign: "center", animation: "ariesRise .45s ease both" }}>
+        <h1 style={{ margin: 0, fontSize: 34, fontWeight: 700, letterSpacing: "-0.02em", color: "#1F2D6B" }}>
+          Who&apos;s playing?
+        </h1>
+        <p style={{ margin: "8px 0 0", color: "#6B6480", fontSize: 15, fontWeight: 500 }}>{quiz.title}</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {players.map((p, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <input
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              style={{
+                flexShrink: 0,
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: "#F1EAF3",
+                color: "#BF1B76",
+                fontWeight: 700,
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {i + 1}
+            </span>
+            <FocusInput
+              base={{
+                flex: 1,
+                minWidth: 0,
+                fontFamily: "inherit",
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#1F2D6B",
+                background: "#fff",
+                border: "1.5px solid #E4DFEC",
+                borderRadius: 13,
+                padding: "13px 16px",
+                outline: "none",
+              }}
               value={p}
               onChange={(e) => update(i, e.target.value)}
               placeholder={`Player ${i + 1}`}
               maxLength={24}
-              className="w-full rounded-xl bg-white/10 px-4 py-3 text-lg font-semibold outline-none ring-2 ring-transparent focus:ring-indigo-400"
             />
             {players.length > 1 && (
-              <button
+              <HoverButton
                 onClick={() => remove(i)}
                 aria-label="Remove player"
-                className="shrink-0 rounded-xl bg-white/10 px-4 py-3 text-lg font-bold text-slate-300 hover:bg-white/20"
+                base={{
+                  flexShrink: 0,
+                  width: 44,
+                  height: 44,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: "#9B93A8",
+                  background: "#fff",
+                  border: "1.5px solid #E4DFEC",
+                  borderRadius: 13,
+                }}
+                hover={{ border: "1.5px solid #C81E5A", color: "#C81E5A" }}
               >
                 ✕
-              </button>
+              </HoverButton>
             )}
           </div>
         ))}
       </div>
 
-      <button
+      <HoverButton
         onClick={add}
-        className="rounded-xl border border-dashed border-white/25 px-4 py-3 font-semibold text-slate-300 hover:bg-white/5"
+        base={{
+          cursor: "pointer",
+          fontFamily: "inherit",
+          fontSize: 15,
+          fontWeight: 600,
+          color: "#8A5C77",
+          background: "transparent",
+          border: "1.5px dashed #D6BFCF",
+          borderRadius: 13,
+          padding: 14,
+        }}
+        hover={{ border: "1.5px dashed #BF1B76", color: "#BF1B76" }}
       >
         + Add player
-      </button>
+      </HoverButton>
 
-      {hasDupes && <p className="text-center text-amber-400">Player names must be unique.</p>}
+      {hasDupes && (
+        <p style={{ margin: 0, textAlign: "center", color: "#D08A00", fontSize: 14, fontWeight: 600 }}>
+          Player names must be unique.
+        </p>
+      )}
 
-      <div className="mt-auto flex flex-col gap-2 pt-4">
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          paddingTop: 14,
+        }}
+      >
         <button
           onClick={() => onStart(cleaned)}
           disabled={!canStart}
-          className="w-full rounded-2xl bg-emerald-500 px-6 py-4 text-lg font-bold transition hover:bg-emerald-400 disabled:opacity-50"
+          style={{
+            cursor: canStart ? "pointer" : "default",
+            fontFamily: "inherit",
+            fontSize: 17,
+            fontWeight: 600,
+            color: "#fff",
+            background: canStart ? "#12967A" : "#BBB4C6",
+            border: "none",
+            borderRadius: 15,
+            padding: 17,
+            opacity: canStart ? 1 : 0.6,
+            boxShadow: "0 14px 30px -14px rgba(18,150,122,0.8)",
+          }}
         >
           Start quiz
         </button>
-        <button onClick={onCancel} className="text-sm font-semibold text-slate-400 hover:text-slate-200">
+        <HoverButton
+          onClick={onCancel}
+          base={{
+            cursor: "pointer",
+            fontFamily: "inherit",
+            background: "none",
+            border: "none",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#9B93A8",
+          }}
+          hover={{ color: "#1F2D6B" }}
+        >
           Cancel
-        </button>
+        </HoverButton>
       </div>
     </main>
   );

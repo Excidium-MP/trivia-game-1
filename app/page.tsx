@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { QUIZZES } from "@/lib/questions";
+import { AriesBackdrop } from "@/components/AriesBackdrop";
+import { HoverButton } from "@/components/AriesUI";
 import { LoginScreen } from "@/components/LoginScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { StoryScreen } from "@/components/StoryScreen";
@@ -17,29 +19,75 @@ export default function App() {
   const [players, setPlayers] = useState<string[]>([]);
 
   if (!ready) {
-    return <main className="flex min-h-screen items-center justify-center text-slate-400">Loading…</main>;
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#9B93A8",
+          fontWeight: 500,
+        }}
+      >
+        Loading…
+      </main>
+    );
   }
 
   if (!session) {
     return <LoginScreen onLogin={login} />;
   }
 
+  const userLabel = session.username + (session.isAdmin ? " · host" : "");
+
   return (
-    <div className="relative">
-      <header className="absolute right-0 top-0 z-10 flex items-center gap-3 p-4 text-sm">
-        <span className="text-slate-400">
-          {session.username}
-          {session.isAdmin ? " (admin)" : ""}
-        </span>
-        <button
-          onClick={() => {
-            setScreen("home");
-            logout();
-          }}
-          className="rounded-lg bg-white/10 px-3 py-1 font-semibold text-slate-200 hover:bg-white/20"
-        >
-          Log out
-        </button>
+    <div
+      style={{
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+        color: "#1F2D6B",
+      }}
+    >
+      <AriesBackdrop />
+
+      <header
+        style={{
+          position: "relative",
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "22px 30px",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/aries-logo.png" alt="Aries" style={{ height: 34, width: "auto" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#6B6480" }}>{userLabel}</span>
+          <HoverButton
+            onClick={() => {
+              setScreen("home");
+              logout();
+            }}
+            base={{
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              background: "#fff",
+              color: "#1F2D6B",
+              fontWeight: 600,
+              fontSize: 14,
+              padding: "9px 16px",
+              borderRadius: 11,
+              boxShadow: "0 4px 14px -6px rgba(31,45,107,0.3)",
+            }}
+            hover={{ background: "#1F2D6B", color: "#fff" }}
+          >
+            Log out
+          </HoverButton>
+        </div>
       </header>
 
       {screen === "home" && (

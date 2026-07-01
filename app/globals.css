@@ -2,11 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
   height: 100%;
+  margin: 0;
 }
 
 body {
-  @apply bg-slate-900 text-white antialiased;
+  background: #f1eef5;
+  color: #1f2d6b;
+  font-family: "Poppins", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Aries entrance animations — transform/opacity only, safe to start mid-stream. */
+@keyframes ariesPop {
+  0% {
+    transform: scale(0.965);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes ariesRise {
+  0% {
+    transform: translateY(9px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes ariesFade {
+  0% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+::selection {
+  background: #bf1b76;
+  color: #fff;
 }
