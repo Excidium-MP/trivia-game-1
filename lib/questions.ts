@@ -1,4 +1,9 @@
-import type { Question } from "./types";
+export interface Question {
+  prompt: string;
+  choices: string[]; // exactly 4
+  correctIndex: number; // 0-based: A=0, B=1, C=2, D=3
+  funFact: string;
+}
 
 /**
  * UX Quiz Challenge — Baymard Edition.
@@ -91,6 +96,3 @@ export const QUESTIONS: Question[] = [
     funFact: "The easier checkout feels, the more likely users are to complete purchases.",
   },
 ];
-
-/** Seconds allowed per question (used for the timer and speed-based scoring). */
-export const TIME_LIMIT_SECONDS = 20;

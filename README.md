@@ -1,22 +1,12 @@
-# Checkout UX Quiz — Live Trivia (Kahoot-style)
+# Checkout UX Quiz — Self-Paced Trivia
 
-A live, host-driven trivia game. A host screen (projector) shows each question; players
-join from their phones by scanning a QR code, answer the same question at the same time,
-and a shared scoreboard shows between questions.
+A simple, self-paced trivia quiz you can share via a QR code. Each person opens the link
+on their own phone, answers all 10 questions at their own pace, sees the correct answer +
+a fun fact after each one, and gets a final score.
 
 Content: the 10-question **UX Quiz Challenge — Baymard Edition** on checkout UX.
 
-## How it works
-
-- **Host** opens `/host`, gets a game **PIN** + **QR code** on screen.
-- **Players** scan the QR (or go to the site and enter the PIN) → `/play/[pin]`, pick a
-  nickname, and play.
-- The host taps one button to move the game forward:
-  `Start → question → reveal answer + fun fact → scoreboard → next → … → final results`.
-- Scoring is Kahoot-style: correct **and** fast earns more (up to ~1000/question).
-
-Tech: Next.js (App Router) + Tailwind. State lives in Upstash Redis (polled ~1s), with an
-in-memory fallback for local single-machine testing.
+Fully **static / client-side** — no backend, no database, no environment variables.
 
 ## Run locally
 
@@ -25,31 +15,27 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. Click **Host a game** (this tab is the projector), then open
-the join URL / PIN in another tab or on your phone.
-
-> No Redis needed for local testing on one computer — it falls back to an in-memory store
-> shared across tabs of the same dev server. For **multi-device** play (phones), deploy it
-> (below) so all devices talk to the same Redis.
-
-To test phones on your local Wi-Fi without deploying, run `npm run dev` and visit
-`http://<your-computer-LAN-IP>:3000` from the phone — but Redis is still recommended for
-reliability once more than a couple of people join.
+Open <http://localhost:3000> and play. On the start or results screen, click **"Show QR
+code to share"** to display a QR of the site's URL — a presenter can put it on a projector
+so everyone scans and plays on their own phone.
 
 ## Deploy (public URL for the QR)
 
-1. Push this folder to a Git repo and import it into **Vercel** (or use the Vercel CLI /
-   integration).
-2. In the Vercel project, add an **Upstash Redis** store (Storage → Marketplace → Upstash).
-   Linking it auto-adds the `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars.
-3. Redeploy. Open the deployment's `/host` on your projector — the QR now points at the
-   public URL, so anyone can join from any network.
+1. Push to GitHub (already at `Excidium-MP/trivia-game-1`).
+2. Import the repo into **Vercel** (Next.js is auto-detected).
+3. Click **Deploy**. That's it — **no environment variables, no database to set up.**
 
-See `.env.example` for the environment variables.
+You get a public URL like `https://trivia-game-1-xxxx.vercel.app`. Share that link (or its
+QR) and anyone can play.
 
 ## Customizing
 
 - **Questions / answers / fun facts:** `lib/questions.ts`.
-- **Timer length:** `TIME_LIMIT_SECONDS` in `lib/questions.ts`.
-- **Points curve:** `lib/scoring.ts`.
-- **Answer colors/shapes:** `lib/ui.ts`.
+- **Answer colors / shapes:** `lib/ui.ts`.
+
+## Notes
+
+Each phone runs its own independent quiz (self-paced), so there's no shared live
+leaderboard — everyone just sees their own score. If you ever want the live, host-driven
+"everyone answers at once" Kahoot mode with a shared leaderboard, that's a bigger change
+(needs a small backend for shared state).
