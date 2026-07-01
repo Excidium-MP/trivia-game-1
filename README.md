@@ -1,12 +1,32 @@
-# Checkout UX Quiz — Self-Paced Trivia
+# ADS Quiz Game
 
-A simple, self-paced trivia quiz you can share via a QR code. Each person opens the link
-on their own phone, answers all 10 questions at their own pace, sees the correct answer +
-a fun fact after each one, and gets a final score.
+An admin-hosted trivia game run from a single shared screen. The host (admin) logs in,
+shares their screen, and drives the quiz: each question is shown, the room answers, the
+host reveals the correct answer, marks who got it right, and at the end the app declares a
+**winner** — or announces a **draw** and runs a **sudden-death tiebreaker**.
 
-Content: the 10-question **UX Quiz Challenge — Baymard Edition** on checkout UX.
+First quiz: **Checkout UX — Baymard Edition** (10 questions).
 
-Fully **static / client-side** — no backend, no database, no environment variables.
+Fully **static / client-side** — no backend, no database, no environment variables. All
+game state lives in the host's browser.
+
+## Flow
+
+`login → home → setup (enter players) → quiz (reveal + mark correct, per question) →
+results → tiebreaker (if a draw) → winner`
+
+## Logins
+
+Accounts are a hardcoded list in [`lib/users.ts`](lib/users.ts). Defaults:
+
+| Username | Password | Role  |
+| -------- | -------- | ----- |
+| `Zarin`  | `Zarin`  | admin |
+| `Irene`  | `Irene`  | player |
+
+Only **admin** accounts can host a game. Edit `lib/users.ts` to change passwords or add
+people. Note: because this is a static app, the list ships in the browser bundle, so it's a
+friendly gate, not real security.
 
 ## Run locally
 
@@ -15,27 +35,18 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000> and play. On the start or results screen, click **"Show QR
-code to share"** to display a QR of the site's URL — a presenter can put it on a projector
-so everyone scans and plays on their own phone.
+Open <http://localhost:3000>, log in as `Zarin` / `Zarin`, click **Get Started**, add the
+players, and run the quiz.
 
-## Deploy (public URL for the QR)
+## Deploy
 
-1. Push to GitHub (already at `Excidium-MP/trivia-game-1`).
-2. Import the repo into **Vercel** (Next.js is auto-detected).
-3. Click **Deploy**. That's it — **no environment variables, no database to set up.**
-
-You get a public URL like `https://trivia-game-1-xxxx.vercel.app`. Share that link (or its
-QR) and anyone can play.
+Push to GitHub (already at `Excidium-MP/trivia-game-1`) and import into **Vercel**. Click
+**Deploy** — no environment variables, no database. You get a public URL the host opens and
+shares on screen.
 
 ## Customizing
 
-- **Questions / answers / fun facts:** `lib/questions.ts`.
-- **Answer colors / shapes:** `lib/ui.ts`.
-
-## Notes
-
-Each phone runs its own independent quiz (self-paced), so there's no shared live
-leaderboard — everyone just sees their own score. If you ever want the live, host-driven
-"everyone answers at once" Kahoot mode with a shared leaderboard, that's a bigger change
-(needs a small backend for shared state).
+- **Questions / quizzes:** [`lib/questions.ts`](lib/questions.ts) (a `QUIZZES` array — add
+  more quizzes here later).
+- **Accounts:** [`lib/users.ts`](lib/users.ts).
+- **Answer colors / shapes:** [`lib/ui.ts`](lib/ui.ts).

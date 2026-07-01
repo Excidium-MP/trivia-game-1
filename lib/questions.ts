@@ -5,11 +5,17 @@ export interface Question {
   funFact: string;
 }
 
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
 /**
  * UX Quiz Challenge — Baymard Edition.
  * Checkout UX trivia. `correctIndex` is 0-based (A=0, B=1, C=2, D=3).
  */
-export const QUESTIONS: Question[] = [
+const CHECKOUT_UX_QUESTIONS: Question[] = [
   {
     prompt: "According to Baymard, what is one of the biggest checkout UX mistakes?",
     choices: [
@@ -94,5 +100,14 @@ export const QUESTIONS: Question[] = [
     choices: ["More pages", "More fields", "Less perceived friction", "More upsells"],
     correctIndex: 2,
     funFact: "The easier checkout feels, the more likely users are to complete purchases.",
+  },
+];
+
+/** All available quizzes. Add more entries here in the future. */
+export const QUIZZES: Quiz[] = [
+  {
+    id: "checkout-ux",
+    title: "Checkout UX — Baymard Edition",
+    questions: CHECKOUT_UX_QUESTIONS,
   },
 ];

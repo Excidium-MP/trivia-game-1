@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Checkout UX Quiz — Live Trivia",
-  description: "A Kahoot-style live trivia game (Baymard checkout UX edition).",
+  title: "ADS Quiz Game",
+  description: "An admin-hosted trivia game — checkout UX (Baymard) edition.",
 };
 
 export const viewport: Viewport = {
